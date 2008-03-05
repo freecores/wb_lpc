@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////
 ////                                                              ////
-////  $Id: top_pci_lpc_host.v,v 1.1 2008-03-05 05:58:41 hharte Exp $   ////
+////  $Id: top_pci_lpc_host.v,v 1.2 2008-03-05 16:14:32 hharte Exp $   ////
 ////  top_pci_lpc_host.v - Top Level for PCI to LPC Host          ////
 ////  for the Enterpoint Raggedstone1 PCI Card.  Based on the     ////
 ////  OpenCores raggedstone project, and uses the OpenCores       ////
@@ -151,12 +151,9 @@ assign wb_int_i = ~LPC_INT;
 
 // Instantiate the pci32tlite module
 pci32tLite #(
-//  .vendorID(16'h10ee),
-//  .deviceID(16'hf00d),
-//  .revisionID(8'h01),
-    .vendorID(16'h14e4),
-    .deviceID(16'h43f5),
-    .revisionID(8'h0a),
+    .vendorID(16'h10ee),
+    .deviceID(16'hf00d),
+    .revisionID(8'h01),
     .subsystemID(16'h0),
     .subsystemvID(16'h0),
     .BARS("1BARMEM"),
