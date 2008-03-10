@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////
 ////                                                              ////
-////  $Id: top_pci_lpc_host.v,v 1.2 2008-03-05 16:14:32 hharte Exp $   ////
+////  $Id: top_pci_lpc_host.v,v 1.3 2008-03-10 14:17:13 hharte Exp $   ////
 ////  top_pci_lpc_host.v - Top Level for PCI to LPC Host          ////
 ////  for the Enterpoint Raggedstone1 PCI Card.  Based on the     ////
 ////  OpenCores raggedstone project, and uses the OpenCores       ////
@@ -64,12 +64,15 @@ module pci_lpc_host
     DISP_SEL,
     DISP_LED,
 
+    LPC_RST,
     LPC_CLK,
     LFRAME,
     LAD,
     LAD_OE,
     LPC_INT,
-    
+
+    LPC_GND,
+
     PREVENT_STRIPPING_OF_UNUSED_INPUTS
 );
 
@@ -99,11 +102,15 @@ input           GNT ;       // attribute s of PCI_nGNT: signal is "yes";
 output  [3:0]   DISP_SEL ;
 output  [6:0]   DISP_LED ;
 
+output          LPC_RST;
 output          LPC_CLK;
 output          LFRAME;
 inout   [3:0]   LAD;
-input           LPC_INT;
+inout           LPC_INT;
 output          LAD_OE;
+
+output  [6:0]   LPC_GND;
+assign LPC_GND = 7'b0000000;
 
 output          PREVENT_STRIPPING_OF_UNUSED_INPUTS ;
 
@@ -116,9 +123,9 @@ wire    [3:0]   lad_i;
 wire    [3:0]   lad_o; 
 wire            host_lad_oe;
 
+assign LPC_RST = RST;
 assign LAD = (host_lad_oe ? lad_o : 4'bzzzz);
 assign LAD_OE = host_lad_oe;
-assign LPC_CLK = CLK;
 assign LFRAME = ~lframe_o;
 
 wire    [3:0]   CBE_in = 
@@ -128,8 +135,6 @@ wire    [3:0]   CBE_in =
     CBE1,
     CBE0
 } ;
-
-wire            PCI_CLK = CLK;
 
 wire    [24:0]  wb_adr_o;
 wire    [31:0]  wb_dat_i;
@@ -146,8 +151,6 @@ wire            wb_int_i;
 
 //assign wb_tga = wb_adr_o[17:16];  // I/O Cycle
 assign wb_tga = 2'b10;  // Firmware cycle
-
-assign wb_int_i = ~LPC_INT;
 
 // Instantiate the pci32tlite module
 pci32tLite #(
@@ -187,8 +190,18 @@ pci_target (
     .wb_int_i(wb_int_i)
     );
 
+// Instantiate the LPC clock generator.
+// The LPC clock is phase shifted by about -3ns to compensate
+// for the skew to the LPC slave over the cable.
+lpc_clkgen lpc_clkgen (
+    .CLKIN_IN(CLK), 
+    .RST_IN(~RST), 
+    .CLKIN_IBUFG_OUT(PCI_CLK), 
+    .CLK0_OUT(LPC_CLK)
+    );
+
 wb_lpc_host lpc_host (
-    .clk_i(CLK), 
+    .clk_i(PCI_CLK), 
     .nrst_i(RST), 
     .wbs_adr_i(wb_adr_o), 
     .wbs_dat_o(wb_dat_i), 
@@ -207,16 +220,36 @@ wb_lpc_host lpc_host (
     .lad_oe(host_lad_oe)
     );
 
+wire         serirq_mode = 1'b0;
+wire  [31:0] irq_o;
+wire         serirq_i;
+wire         serirq_o;
+wire         serirq_oe;
+
+assign LPC_INT = (serirq_oe ? serirq_o : 1'bz);
+assign serirq_i = LPC_INT;
+assign wb_int_i = ~irq_o[1];
+// Instantiate the module
+serirq_host lpc_serirq_host (
+    .clk_i(PCI_CLK), 
+    .nrst_i(RST), 
+    .serirq_mode_i(serirq_mode), 
+    .irq_o(irq_o), 
+    .serirq_o(serirq_o), 
+    .serirq_i(serirq_i), 
+    .serirq_oe(serirq_oe)
+    );
+
 // The 7-segment display is write-only from the PCI interface.
 // Use some dummy nets for inputs that are ignored.
-wire    [31:0]  wb2_dat_i;
-wire            wb2_ack_i;
-wire            wb2_err_i;
-wire            wb2_int_i;
+wire    [31:0] wb2_dat_i;
+wire           wb2_ack_i;
+wire           wb2_err_i;
+wire           wb2_int_i;
 
 // Instantiate the 7-Segment module on the host
 wb_7seg seven_seg0 (
-    .clk_i(CLK), 
+    .clk_i(PCI_CLK), 
     .nrst_i(RST), 
     .wb_adr_i(wb_adr_o), 
     .wb_dat_o(wb2_dat_i), 
@@ -231,5 +264,64 @@ wb_7seg seven_seg0 (
     .DISP_SEL(DISP_SEL), 
     .DISP_LED(DISP_LED)
     );
-
 endmodule
+
+
+// FPGA-specific: use a Xilinx DCM Block to deskew the LPC_CLK
+module lpc_clkgen(CLKIN_IN, 
+                  RST_IN, 
+                  CLKIN_IBUFG_OUT, 
+                  CLK0_OUT);
+
+    input CLKIN_IN;
+    input RST_IN;
+    output CLKIN_IBUFG_OUT;
+    output CLK0_OUT;
+   
+    wire CLKFB_IN;
+    wire CLKIN_IBUFG;
+    wire CLK0_BUF;
+    wire GND_BIT;
+   
+    assign GND_BIT = 0;
+    assign CLKIN_IBUFG_OUT = CLKIN_IBUFG;
+    assign CLK0_OUT = CLKFB_IN;
+    IBUFG CLKIN_IBUFG_INST (.I(CLKIN_IN), 
+                            .O(CLKIN_IBUFG));
+    BUFG CLK0_BUFG_INST (.I(CLK0_BUF), 
+                         .O(CLKFB_IN));
+    DCM DCM_INST (.CLKFB(CLKFB_IN), 
+                  .CLKIN(CLKIN_IBUFG), 
+                  .DSSEN(GND_BIT), 
+                  .PSCLK(GND_BIT), 
+                  .PSEN(GND_BIT), 
+                  .PSINCDEC(GND_BIT), 
+                  .RST(RST_IN), 
+                  .CLKDV(), 
+                  .CLKFX(), 
+                  .CLKFX180(), 
+                  .CLK0(CLK0_BUF), 
+                  .CLK2X(), 
+                  .CLK2X180(), 
+                  .CLK90(), 
+                  .CLK180(), 
+                  .CLK270(), 
+                  .LOCKED(), 
+                  .PSDONE(), 
+                  .STATUS());
+    defparam DCM_INST.CLK_FEEDBACK = "1X";
+    defparam DCM_INST.CLKDV_DIVIDE = 2.0;
+    defparam DCM_INST.CLKFX_DIVIDE = 1;
+    defparam DCM_INST.CLKFX_MULTIPLY = 4;
+    defparam DCM_INST.CLKIN_DIVIDE_BY_2 = "FALSE";
+    defparam DCM_INST.CLKIN_PERIOD = 30.000;
+    defparam DCM_INST.CLKOUT_PHASE_SHIFT = "FIXED";
+    defparam DCM_INST.DESKEW_ADJUST = "SYSTEM_SYNCHRONOUS";
+    defparam DCM_INST.DFS_FREQUENCY_MODE = "LOW";
+    defparam DCM_INST.DLL_FREQUENCY_MODE = "LOW";
+    defparam DCM_INST.DUTY_CYCLE_CORRECTION = "TRUE";
+    defparam DCM_INST.FACTORY_JF = 16'h8080;
+    defparam DCM_INST.PHASE_SHIFT = -18;
+    defparam DCM_INST.STARTUP_WAIT = "FALSE";
+endmodule
+// End of FPGA-specific
