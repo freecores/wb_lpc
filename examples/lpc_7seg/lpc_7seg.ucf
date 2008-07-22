@@ -21,6 +21,9 @@ NET "LFRAME"  LOC = "W2" | IOSTANDARD = LVCMOS33 ;
 NET "LPC_CLK"  LOC = "W1" | IOSTANDARD = LVCMOS33 ; 
 NET "RST"  LOC = "A19" | IOSTANDARD = PCI33_3 ; 
 
+# Update for ISE 10.1, which complains about this.
+NET "LPC_CLK" CLOCK_DEDICATED_ROUTE = FALSE;
+
 #PACE: Start of PACE Area Constraints
 
 #PACE: Start of PACE Prohibit Constraints
