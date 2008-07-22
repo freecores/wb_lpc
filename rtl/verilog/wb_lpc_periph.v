@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////
 ////                                                              ////
-////  $Id: wb_lpc_periph.v,v 1.2 2008-03-05 05:50:59 hharte Exp $ ////
+////  $Id: wb_lpc_periph.v,v 1.3 2008-07-22 13:46:42 hharte Exp $ ////
 ////  wb_lpc_periph.v - LPC Peripheral to Wishbone Master Bridge  ////
 ////                                                              ////
 ////  This file is part of the Wishbone LPC Bridge project        ////
@@ -285,7 +285,10 @@ module wb_lpc_periph(clk_i, nrst_i, wbm_adr_o, wbm_dat_o, wbm_dat_i, wbm_sel_o, 
                         
                         if(nibble_cnt == 1'b1) // end of byte
                             begin
-                                state <= `LPC_ST_H_TAR1;
+                                if((fw_xfr) && (byte_cnt != xfr_len-1)) // Firmware transfer does not have TAR between bytes.
+                                    state <= `LPC_ST_H_DATA;
+										  else
+                                    state <= `LPC_ST_H_TAR1;
                             end
                         else
                             state <= `LPC_ST_H_DATA;
@@ -365,8 +368,12 @@ module wb_lpc_periph(clk_i, nrst_i, wbm_adr_o, wbm_dat_o, wbm_dat_i, wbm_sel_o, 
                         if(nibble_cnt == 1'b1)  // Byte transfer complete
                             if (byte_cnt == xfr_len-1) // Byte transfer complete
                                 state <= `LPC_ST_P_TAR1;
-                            else
-                                state <= `LPC_ST_SYNC;
+                            else begin
+                                if(fw_xfr) // Firmware transfer does not have TAR between bytes.
+                                    state <= `LPC_ST_P_DATA;
+                                else
+                                    state <= `LPC_ST_SYNC;
+                            end
                         else
                             state <= `LPC_ST_P_DATA;
         

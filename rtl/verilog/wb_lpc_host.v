@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////
 ////                                                              ////
-////  $Id: wb_lpc_host.v,v 1.2 2008-03-05 05:50:25 hharte Exp $   ////
+////  $Id: wb_lpc_host.v,v 1.3 2008-07-22 13:46:42 hharte Exp $   ////
 ////  wb_lpc_host.v - Wishbone Slave to LPC Host Bridge           ////
 ////                                                              ////
 ////  This file is part of the Wishbone LPC Bridge project        ////
@@ -165,7 +165,7 @@ module wb_lpc_host(clk_i, nrst_i, wbs_adr_i, wbs_dat_o, wbs_dat_i, wbs_sel_i, wb
                         
                         // The LPC Bus Address is sent across the bus a nibble at a time;
                         // however, the most significant nibble is sent first.  For firmware and
-                        // memory cycles, the address is 32-bits.  Actually, for memeory accesses,
+                        // memory cycles, the address is 32-bits.  Actually, for firmware accesses,
                         // the most significant nibble is known as the IDSEL field.  For I/O,
                         // the address is only 16-bits wide.
                         case(adr_cnt)
@@ -271,7 +271,10 @@ module wb_lpc_host(clk_i, nrst_i, wbs_adr_i, wbs_dat_o, wbs_dat_i, wbs_sel_i, wb
                         
                         if(nibble_cnt == 1'b1) // end of byte
                             begin
-                                state <= `LPC_ST_H_TAR1;
+                                if((fw_xfr) && (byte_cnt != xfr_len-1)) // Firmware transfer does not have TAR between bytes.
+                                    state <= `LPC_ST_H_DATA;
+                                else
+                                    state <= `LPC_ST_H_TAR1;
                             end
                         else
                             state <= `LPC_ST_H_DATA;
@@ -328,8 +331,12 @@ module wb_lpc_host(clk_i, nrst_i, wbs_adr_i, wbs_dat_o, wbs_dat_i, wbs_sel_i, wb
                         if(nibble_cnt == 1'b1)          // Byte transfer complete
                             if (byte_cnt == xfr_len-1)  // End of data transfer phase
                                 state <= `LPC_ST_P_TAR1;
-                            else
-                                state <= `LPC_ST_SYNC;
+                            else begin
+                                if(fw_xfr) // Firmware transfer does not have TAR between bytes.
+                                    state <= `LPC_ST_P_DATA;
+                                else
+                                    state <= `LPC_ST_SYNC;
+                            end
                         else                            // Go to next nibble
                             state <= `LPC_ST_P_DATA;
                     end
