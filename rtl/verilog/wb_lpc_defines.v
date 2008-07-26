@@ -48,21 +48,22 @@
 `define LPC_SYNC_MORE   4'b1001             // LPC Sync Ready More (DMA only)
 `define LPC_SYNC_ERROR  4'b1010             // LPC Sync Error
 
-`define LPC_ST_IDLE     13'h000             // LPC Idle state
-`define LPC_ST_START    13'h001             // LPC Start state
-`define LPC_ST_CYCTYP   13'h002             // LPC Cycle Type State
-`define LPC_ST_ADDR     13'h004             // LPC Address state (4 cycles)
-`define LPC_ST_CHAN     13'h008             // LPC Address state (4 cycles)
-`define LPC_ST_SIZE     13'h010             // LPC Address state (4 cycles)
-`define LPC_ST_H_DATA   13'h020             // LPC Host Data state (2 cycles)
-`define LPC_ST_P_DATA   13'h040             // LPC Peripheral Data state (2 cycles)
-`define LPC_ST_H_TAR1   13'h080             // LPC Host Turnaround 1 (Drive LAD 4'hF)
-`define LPC_ST_H_TAR2   13'h100             // LPC Host Turnaround 2 (Float LAD)
-`define LPC_ST_P_TAR1   13'h200             // LPC Peripheral Turnaround 1 (Drive LAD = 4'hF)
-`define LPC_ST_P_TAR2   13'h400             // LPC Peripheral Turnaround 2 (Float LAD)
-`define LPC_ST_WB_RETIRE 13'h400            // Retire Wishbone transfer (Host only), ends WB cycle.
-`define LPC_ST_SYNC     13'h800             // LPC Sync State (may be multiple cycles for wait-states)
-`define LPC_ST_P_WAIT1  13'h1000            // LPC Sync State (may be multiple cycles for wait-states)
+`define LPC_ST_IDLE     14'h000             // LPC Idle state
+`define LPC_ST_START    14'h001             // LPC Start state
+`define LPC_ST_CYCTYP   14'h002             // LPC Cycle Type State
+`define LPC_ST_ADDR     14'h004             // LPC Address state (4 cycles)
+`define LPC_ST_CHAN     14'h008             // LPC Address state (4 cycles)
+`define LPC_ST_SIZE     14'h010             // LPC Address state (4 cycles)
+`define LPC_ST_H_DATA   14'h020             // LPC Host Data state (2 cycles)
+`define LPC_ST_P_DATA   14'h040             // LPC Peripheral Data state (2 cycles)
+`define LPC_ST_H_TAR1   14'h080             // LPC Host Turnaround 1 (Drive LAD 4'hF)
+`define LPC_ST_H_TAR2   14'h100             // LPC Host Turnaround 2 (Float LAD)
+`define LPC_ST_P_TAR1   14'h200             // LPC Peripheral Turnaround 1 (Drive LAD = 4'hF)
+`define LPC_ST_P_TAR2   14'h400             // LPC Peripheral Turnaround 2 (Float LAD)
+`define LPC_ST_WB_RETIRE 14'h400            // Retire Wishbone transfer (Host only), ends WB cycle.
+`define LPC_ST_SYNC     14'h800             // LPC Sync State (may be multiple cycles for wait-states)
+`define LPC_ST_P_WAIT1  14'h1000            // LPC Sync State (may be multiple cycles for wait-states)
+`define LPC_ST_FWW_SYNC 14'h2000            // LPC Sync State for Firmware Writes (must not generate wait-states)
 
 
 `define WB_SEL_BYTE     4'b0001             // Byte Transfer

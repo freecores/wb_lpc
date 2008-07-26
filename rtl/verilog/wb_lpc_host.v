@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////
 ////                                                              ////
-////  $Id: wb_lpc_host.v,v 1.3 2008-07-22 13:46:42 hharte Exp $   ////
+////  $Id: wb_lpc_host.v,v 1.4 2008-07-26 19:15:31 hharte Exp $   ////
 ////  wb_lpc_host.v - Wishbone Slave to LPC Host Bridge           ////
 ////                                                              ////
 ////  This file is part of the Wishbone LPC Bridge project        ////
@@ -52,7 +52,7 @@
 //              7. P TAR  (2)       P TAR  (2)    +-P TAR  (2)      P TAR
 //                                                          
 module wb_lpc_host(clk_i, nrst_i, wbs_adr_i, wbs_dat_o, wbs_dat_i, wbs_sel_i, wbs_tga_i, wbs_we_i,
-                   wbs_stb_i, wbs_cyc_i, wbs_ack_o,
+                   wbs_stb_i, wbs_cyc_i, wbs_ack_o, wbs_err_o,
                    dma_chan_i, dma_tc_i,
                    lframe_o, lad_i, lad_o, lad_oe
 );
@@ -68,6 +68,7 @@ module wb_lpc_host(clk_i, nrst_i, wbs_adr_i, wbs_dat_o, wbs_dat_i, wbs_sel_i, wb
     input              wbs_stb_i;
     input              wbs_cyc_i;
     output reg         wbs_ack_o;
+    output reg         wbs_err_o;
     
     // LPC Master Interface
     output reg        lframe_o;     // LPC Frame output (active high)
@@ -79,7 +80,7 @@ module wb_lpc_host(clk_i, nrst_i, wbs_adr_i, wbs_dat_o, wbs_dat_i, wbs_sel_i, wb
     input       [2:0] dma_chan_i;   // DMA Channel
     input             dma_tc_i;     // DMA Terminal Count
 
-    reg         [12:0] state;       // Current state
+    reg         [13:0] state;       // Current state
     reg         [2:0] adr_cnt;      // Address nibbe counter
     reg         [3:0] dat_cnt;      // Data nibble counter
     reg         [2:0] xfr_len;      // Number of nibbls for transfer
@@ -105,6 +106,7 @@ module wb_lpc_host(clk_i, nrst_i, wbs_adr_i, wbs_dat_o, wbs_dat_i, wbs_sel_i, wb
             state <= `LPC_ST_IDLE;
             lframe_o <= 1'b0;
             wbs_ack_o <= 1'b0;
+            wbs_err_o <= 1'b0;
             lad_oe <= 1'b0;
             lad_o <= 4'b0;
             adr_cnt <= 3'b0;
@@ -117,6 +119,7 @@ module wb_lpc_host(clk_i, nrst_i, wbs_adr_i, wbs_dat_o, wbs_dat_i, wbs_sel_i, wb
                 `LPC_ST_IDLE:
                     begin
                         wbs_ack_o <= 1'b0;
+                        wbs_err_o <= 1'b0;
                         lframe_o <= 1'b0;
                         dat_cnt <= 4'h0;                        
 
@@ -294,15 +297,20 @@ module wb_lpc_host(clk_i, nrst_i, wbs_adr_i, wbs_dat_o, wbs_dat_i, wbs_sel_i, wb
                 `LPC_ST_SYNC:
                     begin
                         lad_oe <= 1'b0;     // float LAD
-                        if(lad_i == `LPC_SYNC_READY) begin
+                        if((lad_i == `LPC_SYNC_READY) || (lad_i == `LPC_SYNC_MORE)) begin
                             if(wbs_wr) begin
                                 state <= `LPC_ST_P_TAR1;
                             end
-                            else
+                            else begin
                                 state <= `LPC_ST_P_DATA;
                             end
-                        else
+                        end else if(lad_i == `LPC_SYNC_ERROR) begin
+                            dat_cnt <= { xfr_len, 1'b1 };    // Terminate data transfer
+                            wbs_err_o <= 1'b1;    // signal wishbone error
+                            state <= `LPC_ST_P_TAR1;
+                        end else begin
                             state <= `LPC_ST_SYNC;
+                        end
                     end
         
                 `LPC_ST_P_DATA:
@@ -359,6 +367,7 @@ module wb_lpc_host(clk_i, nrst_i, wbs_adr_i, wbs_dat_o, wbs_dat_i, wbs_sel_i, wb
                 `LPC_ST_WB_RETIRE:
                     begin
                         wbs_ack_o <= 1'b0;
+                        wbs_err_o <= 1'b0;
                         if(wbs_acc) begin
                             state <= `LPC_ST_WB_RETIRE;
                         end

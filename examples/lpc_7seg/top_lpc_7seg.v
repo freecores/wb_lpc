@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////
 ////                                                              ////
-////  $Id: top_lpc_7seg.v,v 1.1 2008-03-05 05:58:39 hharte Exp $  ////
+////  $Id: top_lpc_7seg.v,v 1.2 2008-07-26 19:15:29 hharte Exp $  ////
 ////  top_lpc_7seg.v - LPC Peripheral to 7-Segment Display for    ////
 ////  Enterpoint Raggedstone1 card.                               ////
 ////                                                              ////
@@ -93,6 +93,7 @@ wb_lpc_periph lpc_periph (
     .wbm_stb_o(wb_stb_o), 
     .wbm_cyc_o(wb_cyc_o), 
     .wbm_ack_i(wb_ack_i), 
+    .wbm_err_i(wb_err_i), 	 
     .dma_chan_o(dma_chan_i), 
     .dma_tc_o(dma_tc_i), 
     .lframe_i(~LFRAME), 

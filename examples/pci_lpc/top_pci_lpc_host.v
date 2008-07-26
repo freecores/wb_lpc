@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////
 ////                                                              ////
-////  $Id: top_pci_lpc_host.v,v 1.3 2008-03-10 14:17:13 hharte Exp $   ////
+////  $Id: top_pci_lpc_host.v,v 1.4 2008-07-26 19:15:31 hharte Exp $   ////
 ////  top_pci_lpc_host.v - Top Level for PCI to LPC Host          ////
 ////  for the Enterpoint Raggedstone1 PCI Card.  Based on the     ////
 ////  OpenCores raggedstone project, and uses the OpenCores       ////
@@ -211,7 +211,8 @@ wb_lpc_host lpc_host (
     .wbs_we_i(wb_we_o), 
     .wbs_stb_i(wb_stb_o), 
     .wbs_cyc_i(wb_cyc_o), 
-    .wbs_ack_o(wb_ack_i), 
+    .wbs_ack_o(wb_ack_i),
+    .wbs_err_o(wb_err_i), 	 
     .dma_chan_i(dma_chan_i), 
     .dma_tc_i(dma_tc_i), 
     .lframe_o(lframe_o), 
