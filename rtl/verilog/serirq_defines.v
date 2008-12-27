@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////
 ////                                                              ////
-////  $Id: serirq_defines.v,v 1.1 2008-03-10 14:08:13 hharte Exp $
+////  $Id: serirq_defines.v,v 1.2 2008-12-27 19:46:18 hharte Exp $
 ////  wb_lpc_defines.v                                            ////
 ////                                                              ////
 ////  This file is part of the Wishbone LPC Bridge project        ////
@@ -50,4 +50,4 @@
 `define SERIRQ_ST_WAIT_STOP 13'h200
 
 `define SERIRQ_MODE_CONTINUOUS 1'b0           // Serirq "Continuous Mode"
-`define SERIRQ_MODE_QUIET 1'b1                // Serirq "Quiet Mode"
+`define SERIRQ_MODE_QUIET  1'b1               // Serirq "Quiet Mode"

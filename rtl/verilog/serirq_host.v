@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////
 ////                                                              ////
-////  $Id: serirq_host.v,v 1.1 2008-03-10 14:08:13 hharte Exp $   ////
+////  $Id: serirq_host.v,v 1.2 2008-12-27 19:46:18 hharte Exp $   ////
 ////  serirq_host.v - SERIRQ Host Controller                      ////
 ////                                                              ////
 ////  This file is part of the Wishbone LPC Bridge project        ////
@@ -46,8 +46,8 @@ module serirq_host(clk_i, nrst_i,
 );
     // Wishbone Slave Interface
     input              clk_i;
-    input              nrst_i;             // Active low reset.
-    input              serirq_mode_i;
+    input              nrst_i;      // Active low reset.
+    input              serirq_mode_i; // Mode selection, 0=Continuous, 1=Quiet
     
     // SERIRQ Master Interface
     output reg         serirq_o;    // SERIRQ output
@@ -93,8 +93,8 @@ module serirq_host(clk_i, nrst_i,
                             start_cnt <= 3'b000;
                             state <= `SERIRQ_ST_START;
                         end
-								else if((current_mode == `SERIRQ_MODE_QUIET) && (serirq_mode_i == `SERIRQ_MODE_CONTINUOUS)) 
-                        begin // Switch to Continuous mode if by starting a new cycle to inform the slaves.
+                        else if((current_mode == `SERIRQ_MODE_QUIET) && (serirq_mode_i == `SERIRQ_MODE_CONTINUOUS)) 
+                        begin // Switch to Continuous mode by starting a new cycle to inform the slaves.
                             start_cnt <= 3'b000;
                             state <= `SERIRQ_ST_START;
                         end
@@ -147,7 +147,7 @@ module serirq_host(clk_i, nrst_i,
                         serirq_o <= 1'b0;
                         serirq_oe <= 1'b1;
                         stop_cnt <= stop_cnt + 1;
-                        if(stop_cnt == (serirq_mode_i ? 2'b10 : 2'b01)) begin
+                        if(stop_cnt == (serirq_mode_i ? 2'b01 : 2'b10)) begin
                             state <= `SERIRQ_ST_STOP_R;
                         end
                         else begin

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////
 ////                                                              ////
-////  $Id: serirq_slave.v,v 1.1 2008-03-10 14:08:13 hharte Exp $  ////
+////  $Id: serirq_slave.v,v 1.2 2008-12-27 19:46:18 hharte Exp $  ////
 ////  serirq_slave.v - Wishbone Slave to SERIRQ Host Bridge       ////
 ////                                                              ////
 ////  This file is part of the Wishbone LPC Bridge project        ////
@@ -164,13 +164,13 @@ module serirq_slave(clk_i, nrst_i,
                         begin
                             found_stop <= 1'b1;
                             found_start <= 1'b0;
-                            serirq_mode <= `SERIRQ_MODE_CONTINUOUS;
+                            serirq_mode <= `SERIRQ_MODE_QUIET;
                         end
                     4'h3:
                         begin
                             found_stop <= 1'b1;
                             found_start <= 1'b0;
-                            serirq_mode <= `SERIRQ_MODE_QUIET;
+                            serirq_mode <= `SERIRQ_MODE_CONTINUOUS;
                         end
                     4'h4:
                         begin
